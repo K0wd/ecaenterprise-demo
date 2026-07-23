@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Secrets — never commit real credentials
+.env
+
+# Playwright / playwright-bdd generated output
+.features-gen/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
