@@ -30,10 +30,15 @@ export default defineConfig({
   use: {
     baseURL: env.baseUrl,
 
-    // Evidence capture — automatic and only when it matters (on failure), to keep artifacts small.
+    // Evidence for a reviewable "test journey" report — captured on every run so the
+    // published HTML report always shows what the tests did, not just green ticks:
+    //   - per-step screenshots are attached by src/steps/hooks.ts (AfterStep)
+    //   - video: full recording of each scenario
+    //   - trace: interactive step-by-step timeline with DOM snapshots (open from the report)
+    // A dedicated failure screenshot is still captured on top for fast triage.
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'on-first-retry',
+    video: 'on',
+    trace: 'on',
   },
 
   projects: [

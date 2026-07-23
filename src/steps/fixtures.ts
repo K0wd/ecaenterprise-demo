@@ -24,4 +24,4 @@ export const test = base.extend<Pages>({
   checkoutPage: async ({ page }, use) => use(new CheckoutPage(page)),
 });
 
-export const { Given, When, Then } = createBdd(test);
+export const { Given, When, Then, AfterStep } = createBdd(test);
