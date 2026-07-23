@@ -71,6 +71,18 @@ jobs:
           RUN_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" node scripts/build-history.mjs
           REPORT_META="Run #${{ github.run_number }} · ${{ github.ref_name }} · $(date -u +%Y-%m-%d)" node scripts/build-visual-report.mjs
 
+      - name: Stitch full-journey video
+        run: |
+          which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          cd public/evidence
+          if [ -s manifest.txt ]; then
+            # All clips share codec/size, so a stream copy stitches cleanly; re-encode as fallback.
+            ffmpeg -y -f concat -safe 0 -i manifest.txt -c copy full-journey.webm \
+              || ffmpeg -y -f concat -safe 0 -i manifest.txt -c:v libvpx -b:v 1M full-journey.webm
+            # Keep only the stitched journey in the deploy.
+            rm -f journey-*.webm manifest.txt
+          fi
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
