@@ -139,7 +139,7 @@ for (const [featureName, list] of byFeature) {
   body += `<section class="feature"><h2 class="feature-title">${esc(featureName)}</h2>`;
   for (const sc of list) {
     const pill = sc.ok ? '<span class="pill pass">PASSED</span>' : '<span class="pill fail">FAILED</span>';
-    body += `<article class="scenario"><header class="sc-head"><h3>${esc(sc.name)}</h3>${pill}</header><ol class="steps">`;
+    body += `<details class="scenario"><summary class="sc-head"><h3>${esc(sc.name)}</h3>${pill}</summary><ol class="steps">`;
     sc.shots.forEach((img, k) => {
       const kw = sc.steps[k]?.keyword || '*';
       const text = sc.steps[k]?.text || sc.name;
@@ -150,7 +150,7 @@ for (const [featureName, list] of byFeature) {
       }
       body += '</li>';
     });
-    body += '</ol></article>';
+    body += '</ol></details>';
   }
   body += '</section>';
 }
@@ -175,9 +175,13 @@ const html = `<!doctype html>
   .links a { color:#8bb4ff; margin-right:16px; font-size:.9rem; }
   .feature { margin-top:36px; }
   .feature-title { font-size:1.25rem; border-bottom:2px solid var(--line); padding-bottom:8px; }
-  .scenario { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:18px 0; }
-  .sc-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
-  .sc-head h3 { margin:0; font-size:1.05rem; }
+  .scenario { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin:18px 0; }
+  .sc-head { display:flex; align-items:center; gap:12px; padding:12px 0; cursor:pointer; list-style:none; }
+  .sc-head::-webkit-details-marker { display:none; }
+  .sc-head::before { content:'▸'; color:var(--muted); font-size:.85rem; transition:transform .15s; }
+  .scenario[open] .sc-head::before { transform:rotate(90deg); }
+  .sc-head h3 { margin:0; font-size:1.05rem; flex:1; }
+  .scenario[open] .sc-head { border-bottom:1px dashed var(--line); margin-bottom:6px; }
   .pill { font-size:.7rem; font-weight:700; letter-spacing:.5px; padding:4px 9px; border-radius:999px; }
   .pill.pass { background:rgba(34,197,94,.15); color:var(--pass); }
   .pill.fail { background:rgba(239,68,68,.15); color:var(--fail); }
