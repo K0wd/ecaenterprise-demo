@@ -10,3 +10,7 @@ playwright-report/
 test-results/
 blob-report/
 playwright/.cache/
+
+# CI Pages assembly (generated in the workflow)
+public/
+prev-history.json

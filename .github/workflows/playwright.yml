@@ -5,9 +5,22 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# GITHUB_TOKEN permissions needed to publish the report to this repo's GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Serialise runs so the rolling history.json is never updated by two runs at once.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test:
+    name: Test & build report
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
@@ -16,6 +29,8 @@ jobs:
       BASE_URL: ${{ vars.BASE_URL || 'https://www.saucedemo.com' }}
       STANDARD_USER: ${{ secrets.STANDARD_USER || 'standard_user' }}
       STANDARD_PASSWORD: ${{ secrets.STANDARD_PASSWORD || 'secret_sauce' }}
+      # Where the last published history lives (used to append this run's result).
+      PAGES_BASE: https://kimbandeleon.pro/ecaenterprise-demo
     steps:
       - uses: actions/checkout@v4
 
@@ -30,13 +45,56 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Record pass/fail without aborting — we still want to publish a failing run
+      # so the history and report reflect reality. The job is failed at the end.
       - name: Run BDD tests
+        id: tests
+        continue-on-error: true
         run: npm test
 
-      - name: Upload HTML report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+      - name: Fetch previously published history
+        run: |
+          curl -sfL "$PAGES_BASE/history.json" -o prev-history.json \
+            || echo "No previous history yet — starting fresh."
+
+      - name: Assemble Pages site (report + history)
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          GIT_SHA: ${{ github.sha }}
+          GIT_BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p public
+          cp -r playwright-report/. public/
+          RUN_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" node scripts/build-history.mjs
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
         with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Fail the job if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: |
+          echo "::error::Playwright tests failed — see the published report."
+          exit 1
+
+  deploy:
+    name: Deploy report to Pages
+    needs: test
+    # Publish even when tests failed, so the report and history stay current.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

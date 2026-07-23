@@ -22,6 +22,9 @@ export default defineConfig({
   reporter: [
     ['html', { open: 'never' }],
     ['list'],
+    // Machine-readable results — consumed by scripts/build-history.mjs to build the
+    // per-test flakiness history published alongside the HTML report.
+    ['json', { outputFile: 'test-results/results.json' }],
   ],
 
   use: {
